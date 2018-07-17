@@ -101,11 +101,11 @@ module.exports = exports = function relationship(schema, options) {
         var opts = optionsForRelationship(relationshipPath);
         if (opts.validateExistence || opts.upsert) {
             if (_.isFunction(relationshipPath.options.type)) {
-                schema.path(relationshipPathName).validate(function(value, response) {
+                schema.path(relationshipPathName).validate(function(value) {
                     var relationshipTargetModel = this.db.model(opts.ref);
-                    relationshipTargetModel.findById(value, function(err, result) {
+                    return relationshipTargetModel.findById(value, function(err, result) {
                         if (err) {
-                            response(false);
+                            return false;
                         } else if (!result) {
                             if (opts.upsert) {
                                 var targetModel = new relationshipTargetModel({
@@ -113,26 +113,26 @@ module.exports = exports = function relationship(schema, options) {
                                 });
 
                                 targetModel.save(function(err, model) {
-                                    response(!err && model);
+                                    return !err && model;
                                 });
                             } else {
-                                response(false);
+                                return false;
                             }
                         } else {
-                            response(true);
+                            return 
                         }
                     });
                 }, "Relationship entity " + opts.ref + " does not exist");
             } else if (_.isObject(relationshipPath.options.type)) {
                 schema.path(relationshipPathName).validate(function(value, response) {
                     var relationshipTargetModel = this.db.model(opts.ref);
-                    relationshipTargetModel.find({
+                    return relationshipTargetModel.find({
                         _id: {
                             $in: value
                         }
                     }, function(err, result) {
                         if (err || !result) {
-                            response(false);
+                            return false;
                         } else if (result.length !== value.length) {
                             if (opts.upsert) {
                                 var existingModels = result.map(function(o) {
@@ -152,14 +152,14 @@ module.exports = exports = function relationship(schema, options) {
                                         mdl.save(cb);
                                     },
                                     function(err) {
-                                        response(!err);
+                                        return !err;
                                     }
                                 );
                             } else {
-                                response(false);
+                                return false;
                             }
                         } else {
-                            response(true);
+                            return false;
                         }
                     });
                 }, "Relationship entity " + opts.ref + " does not exist");
